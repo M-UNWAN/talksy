@@ -20,7 +20,7 @@ app.use(
   require("cors")({
     origin: [
       "http://localhost:5173",
-      "https://talksy-frontend-786b.onrender.com",
+      "https://talksy-1-yb2j.onrender.com",
     ],
   })
 );
@@ -177,7 +177,7 @@ const io = new Server(server, {
   cors: {
     origin: [
       "http://localhost:5173",
-      "https://talksy-frontend-786b.onrender.com",
+      "https://talksy-1-yb2j.onrender.com",
     ],
     methods: ["GET", "POST"],
   },
