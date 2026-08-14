@@ -1035,6 +1035,19 @@ body {
 ========================================== */
 
 @media (max-width: 700px) {
+  .sidebar.mobile-visible {
+  display: flex;
+  }
+
+  .sidebar.mobile-hidden {
+    display: none;
+  }
+
+  .chat-window {
+    width: 100%;
+    flex: 1;
+  }
+
   .header {
     height: 55px;
 
@@ -1046,7 +1059,7 @@ body {
   }
 
   .sidebar {
-    width: 80px;
+    width:100%;
   }
 
   .sidebar h2 {
@@ -1065,10 +1078,6 @@ body {
     padding-left: 5px;
   }
 
-  .chat-user-info {
-    display: none;
-  }
-
   .profile-bottom {
     padding: 7px;
   }
@@ -1079,10 +1088,6 @@ body {
     padding: 8px 4px;
   }
 
-  .profile-info,
-  .logout-button {
-    display: none;
-  }
 
   .message-wrapper {
     max-width: 82%;
@@ -1112,9 +1117,6 @@ body {
 ========================================== */
 
 @media (max-width: 450px) {
-  .sidebar {
-    width: 65px;
-  }
 
   .avatar {
     width: 42px;
@@ -1665,4 +1667,35 @@ body {
   border: 2px solid white;
 
   border-radius: 50%;
+}
+
+/* ==========================================
+   BACK BUTTON
+========================================== */
+
+.mobile-back-button {
+  display: flex;
+
+  width: 36px;
+  height: 36px;
+
+  min-width: 36px;
+
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+
+  color: #546e7a;
+
+  font-size: 24px;
+
+  cursor: pointer;
+}
+
+.mobile-back-button:hover {
+  background: #e3f2fd;
 }

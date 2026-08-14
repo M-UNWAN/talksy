@@ -39,6 +39,7 @@ function App() {
   // ==========================================
 
   const [selectedUser, setSelectedUser] = useState(null);
+  const [mobileView, setMobileView] = useState("contacts");
 
   // ==========================================
   // MESSAGE
@@ -919,6 +920,8 @@ console.log("FILE SIZE:", selectedMedia.size);
       selectedUsername
     );
 
+    setMobileView("chat");
+
     setUnreadCounts((prev) => ({
       ...prev,
       [selectedUsername]: 0,
@@ -941,6 +944,11 @@ console.log("FILE SIZE:", selectedMedia.size);
         receiver: username,
       }
     );
+  };
+
+  const backToContacts = () => {
+  setMobileView("contacts");
+  setSelectedUser(null);
   };
 
   // ==========================================
@@ -1204,7 +1212,13 @@ console.log("FILE SIZE:", selectedMedia.size);
 
         {/* SIDEBAR */}
 
-        <aside className="sidebar">
+        <aside
+          className={`sidebar ${
+            mobileView === "contacts"
+              ? "mobile-visible"
+              : "mobile-hidden"
+          }`}
+        >
 
           <h2>Chats</h2>
 
@@ -1428,6 +1442,14 @@ console.log("FILE SIZE:", selectedMedia.size);
 
             {selectedUser ? (
               <>
+
+                <button
+                  className="mobile-back-button"
+                  onClick={backToContacts}
+                  title="Back to contacts"
+                >
+                  ←
+                </button>
 
                 <div className="avatar">
 

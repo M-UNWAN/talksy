@@ -551,10 +551,12 @@ socket.on(
 
           const time =
             new Date().toLocaleTimeString(
-              [],
+              "en-IN",
               {
+                timeZone: "Asia/Kolkata",
                 hour: "2-digit",
                 minute: "2-digit",
+                hour12: true,
               }
             );
 
@@ -683,10 +685,12 @@ socket.on(
 
           const time =
             new Date().toLocaleTimeString(
-              [],
+              "en-IN",
               {
+                timeZone: "Asia/Kolkata",
                 hour: "2-digit",
                 minute: "2-digit",
+                hour12: true,
               }
             );
 
