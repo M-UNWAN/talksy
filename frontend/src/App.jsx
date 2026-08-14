@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import "./App.css";
 
-const socket = io("https://talksy-backend-w3cv.onrender.com");
+const socket = io("https://talksy-skjz.onrender.com");
 
 function getChatKey(user1, user2) {
   return [user1, user2].sort().join("_");
@@ -585,7 +585,7 @@ function App() {
       formData.append("file", file);
 
       const response = await fetch(
-        "https://talksy-backend-w3cv.onrender.com/upload",
+        "https://talksy-skjz.onrender.com/upload",
         {
           method: "POST",
           body: formData,
@@ -606,7 +606,7 @@ function App() {
       }
 
       const imageUrl =
-        `https://talksy-backend-w3cv.onrender.com${data.mediaUrl}`;
+        `https://talksy-skjz.onrender.com${data.mediaUrl}`;
 
       socket.emit(
         "update_profile_picture",
@@ -699,7 +699,7 @@ function App() {
 
       const response =
         await fetch(
-          "https://talksy-backend-w3cv.onrender.com/upload",
+          "https://talksy-skjz.onrender.com/upload",
           {
             method: "POST",
             body: formData,
@@ -1233,7 +1233,7 @@ function App() {
                           src={
                             user.profilePicture?.startsWith("http")
                               ? user.profilePicture
-                              : `https://talksy-backend-w3cv.onrender.com${user.profilePicture}`
+                              : `https://talksy-skjz.onrender.com${user.profilePicture}`
                           }
                           alt={user.username}
                           className="profile-picture"
@@ -1538,12 +1538,12 @@ function App() {
                       {msg.messageType ===
                         "image" && (
                         <img
-                          src={`https://talksy-backend-w3cv.onrender.com${msg.mediaUrl}`}
+                          src={`https://talksy-skjz.onrender.com${msg.mediaUrl}`}
                           alt="Shared"
                           className="chat-image"
                           onClick={() =>
                             window.open(
-                              `https://talksy-backend-w3cv.onrender.com${msg.mediaUrl}`,
+                              `https://talksy-skjz.onrender.com${msg.mediaUrl}`,
 "_blank"
                             )
                           }
@@ -1555,7 +1555,7 @@ function App() {
                       {msg.messageType ===
                         "video" && (
                         <video
-                          src={`https://talksy-backend-w3cv.onrender.com${msg.mediaUrl}`}
+                          src={`https://talksy-skjz.onrender.com${msg.mediaUrl}`}
                           controls
                           className="chat-video"
                         />
