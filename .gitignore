@@ -6,4 +6,6 @@ frontend/dist/
 frontend/.env
 backend/.env
 
-*.log
+*.logbackend/uploads/
+
+backend/uploads/
