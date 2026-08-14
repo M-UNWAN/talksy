@@ -584,29 +584,41 @@ function App() {
 
       formData.append("file", file);
 
-      const response = await fetch(
-        "https://talksy-skjz.onrender.com/upload",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      let response;
+let data;
 
-      const data =
-        await response.json();
-
-      if (
-        !response.ok ||
-        !data.success
-      ) {
-        throw new Error(
-          data.message ||
-            "Upload failed."
-        );
+for (let attempt = 1; attempt <= 3; attempt++) {
+  try {
+    response = await fetch(
+      "https://talksy-skjz.onrender.com/upload",
+      {
+        method: "POST",
+        body: formData,
       }
+    );
 
-      const imageUrl =
-        `https://talksy-skjz.onrender.com${data.mediaUrl}`;
+    data = await response.json();
+
+    if (response.ok && data.success) {
+      break;
+    }
+
+    throw new Error(
+      data.message || "Upload failed."
+    );
+  } catch (error) {
+    if (attempt === 3) {
+      throw error;
+    }
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, 2000)
+    );
+  }
+}
+
+const imageUrl =
+  `https://talksy-skjz.onrender.com${data.mediaUrl}`;
 
       socket.emit(
         "update_profile_picture",
@@ -693,9 +705,13 @@ function App() {
         new FormData();
 
       formData.append(
-        "file",
-        selectedMedia
-      );
+  "file",
+  selectedMedia
+);
+
+console.log("FILE NAME:", selectedMedia.name);
+console.log("FILE TYPE:", selectedMedia.type);
+console.log("FILE SIZE:", selectedMedia.size);
 
       const response =
         await fetch(
