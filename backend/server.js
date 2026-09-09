@@ -8,6 +8,13 @@ const multer = require("multer");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const User = require("./models/User");
 const Message = require("./models/Message");
@@ -27,52 +34,16 @@ app.use(
 
 const server = http.createServer(app);
 
-// ==========================================
-// BASIC MIDDLEWARE
-// ==========================================
-
-app.use(express.json());
-
-// ==========================================
-// UPLOADS FOLDER
-// ==========================================
-
-const uploadsPath = path.join(
-  __dirname,
-  "uploads"
-);
-
-if (!fs.existsSync(uploadsPath)) {
-  fs.mkdirSync(uploadsPath, {
-    recursive: true,
-  });
-}
-
-// Make uploaded files publicly accessible
-app.use(
-  "/uploads",
-  express.static(uploadsPath)
-);
-
-// ==========================================
 // MULTER STORAGE
 // ==========================================
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsPath);
-  },
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-  filename: (req, file, cb) => {
-    const extension =
-      path.extname(file.originalname);
-
-    const uniqueName =
-      `${Date.now()}-${Math.round(
-        Math.random() * 1e9
-      )}${extension}`;
-
-    cb(null, uniqueName);
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "talksy",
+    resource_type: "auto",
   },
 });
 
@@ -146,18 +117,34 @@ app.post("/upload", (req, res) => {
         ? "image"
         : "video";
 
-      const mediaUrl = `/uploads/${req.file.filename}`;
+      const mediaUrl = req.file.path;
 
       console.log("File uploaded:", mediaUrl);
+      console.log("Cloudinary file data:", req.file);
 
       return res.json({
         success: true,
         mediaUrl,
         mediaType,
-        originalName: req.file.originalname,
-        mimeType: req.file.mimetype,
-        size: req.file.size,
+
+        cloudinaryPublicId:
+          req.file.filename,
+
+        cloudinaryResourceType:
+          mediaType === "video"
+            ? "video"
+            : "image",
+
+        originalName:
+          req.file.originalname,
+
+        mimeType:
+          req.file.mimetype,
+
+        size:
+          req.file.size,
       });
+      
     } catch (error) {
       console.error("Upload API error:", error);
 
@@ -168,6 +155,42 @@ app.post("/upload", (req, res) => {
     }
   });
 });
+
+
+// ==========================================
+// DELETE FILE FROM CLOUDINARY
+// ==========================================
+
+async function deleteCloudinaryFile(
+  publicId,
+  resourceType
+) {
+  if (!publicId || !resourceType) {
+    return;
+  }
+
+  try {
+    const result =
+      await cloudinary.uploader.destroy(
+        publicId,
+        {
+          resource_type: resourceType,
+          type: "upload",
+          invalidate: true,
+        }
+      );
+
+    console.log(
+      "Cloudinary delete result:",
+      result
+    );
+  } catch (error) {
+    console.error(
+      "Cloudinary delete error:",
+      error
+    );
+  }
+}
 
 // ==========================================
 // SOCKET.IO
@@ -576,20 +599,33 @@ socket.on(
           const messageData = {
             _id:
               newMessage._id,
+
             sender:
               newMessage.sender,
+
             receiver:
               newMessage.receiver,
+
             message:
               newMessage.message,
+
             time:
               newMessage.time,
+
             seen:
               newMessage.seen,
+
             messageType:
               newMessage.messageType,
+
             mediaUrl:
               newMessage.mediaUrl,
+
+            cloudinaryPublicId:
+              newMessage.cloudinaryPublicId,
+
+            cloudinaryResourceType:
+              newMessage.cloudinaryResourceType,
           };
 
           console.log(
@@ -660,6 +696,8 @@ socket.on(
             receiver,
             mediaUrl,
             mediaType,
+            cloudinaryPublicId,
+            cloudinaryResourceType,
             message,
           } = data;
 
@@ -711,6 +749,12 @@ socket.on(
                 mediaType,
 
               mediaUrl,
+
+              cloudinaryPublicId:
+                cloudinaryPublicId || "",
+
+              cloudinaryResourceType:
+                cloudinaryResourceType || "",
             });
 
           const messageData = {
@@ -931,6 +975,11 @@ socket.on(
       "delete_message",
       async (data) => {
         try {
+          console.log(
+            "DELETE MESSAGE EVENT RECEIVED:",
+            data
+          );
+          
           const {
             messageId,
             sender,
@@ -960,38 +1009,27 @@ socket.on(
             return;
           }
 
+          // Delete media from Cloudinary
+          console.log(
+            "Cloudinary data:",
+            message.cloudinaryPublicId,
+            message.cloudinaryResourceType
+          );
+
+          if (
+            message.cloudinaryPublicId &&
+            message.cloudinaryResourceType
+          ) {
+            await deleteCloudinaryFile(
+              message.cloudinaryPublicId,
+              message.cloudinaryResourceType
+            );
+          }
+
+          // Delete message from MongoDB
           await Message.findByIdAndDelete(
             messageId
           );
-
-          // ==================================
-          // DELETE MEDIA FILE
-          // ==================================
-
-          if (
-            message.mediaUrl
-          ) {
-            const filename =
-              path.basename(
-                message.mediaUrl
-              );
-
-            const filePath =
-              path.join(
-                uploadsPath,
-                filename
-              );
-
-            if (
-              fs.existsSync(
-                filePath
-              )
-            ) {
-              fs.unlinkSync(
-                filePath
-              );
-            }
-          }
 
           const deleteData = {
             messageId:
@@ -1070,39 +1108,20 @@ socket.on(
               ],
             });
 
-          // ==================================
-          // DELETE MEDIA FILES
-          // ==================================
-
-          for (
-            const message of chatMessages
-          ) {
-            if (
-              message.mediaUrl
-            ) {
-              const filename =
-                path.basename(
-                  message.mediaUrl
-                );
-
-              const filePath =
-                path.join(
-                  uploadsPath,
-                  filename
-                );
-
+            // Delete all media files from Cloudinary
+            for (const message of chatMessages) {
               if (
-                fs.existsSync(
-                  filePath
-                )
+                message.cloudinaryPublicId &&
+                message.cloudinaryResourceType
               ) {
-                fs.unlinkSync(
-                  filePath
+                await deleteCloudinaryFile(
+                  message.cloudinaryPublicId,
+                  message.cloudinaryResourceType
                 );
               }
             }
-          }
 
+          
           // ==================================
           // DELETE MESSAGES
           // ==================================

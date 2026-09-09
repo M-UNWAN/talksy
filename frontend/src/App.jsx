@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import "./App.css";
 
-const socket = io("https://talksy-skjz.onrender.com");
+const socket = io("http://localhost:5000");
 
 function getChatKey(user1, user2) {
   return [user1, user2].sort().join("_");
@@ -27,6 +27,8 @@ function App() {
   const [profilePicture, setProfilePicture] = useState("");
   const [uploadingProfilePicture, setUploadingProfilePicture] =
     useState(false);
+
+  const [viewingProfile, setViewingProfile] = useState(null);
 
   // ==========================================
   // USERS
@@ -591,7 +593,7 @@ function App() {
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           response = await fetch(
-            "https://talksy-skjz.onrender.com/upload",
+            "http://localhost:5000/upload",
             {
               method: "POST",
               body: formData,
@@ -618,8 +620,7 @@ function App() {
         }
       }
 
-      const imageUrl =
-        `https://talksy-skjz.onrender.com${data.mediaUrl}`;
+      const imageUrl = data.mediaUrl;
 
       socket.emit(
         "update_profile_picture",
@@ -716,7 +717,7 @@ console.log("FILE SIZE:", selectedMedia.size);
 
       const response =
         await fetch(
-          "https://talksy-skjz.onrender.com/upload",
+          "http://localhost:5000/upload",
           {
             method: "POST",
             body: formData,
@@ -736,18 +737,20 @@ console.log("FILE SIZE:", selectedMedia.size);
         );
       }
 
-      socket.emit(
-        "send_media_message",
-        {
-          sender: username,
-          receiver: selectedUser,
-          mediaUrl:
-            data.mediaUrl,
-          mediaType:
-            data.mediaType,
-          message: "",
-        }
-      );
+      socket.emit("send_media_message", {
+        sender: username,
+        receiver: selectedUser,
+        mediaUrl: data.mediaUrl,
+        mediaType: data.mediaType,
+
+        cloudinaryPublicId:
+          data.cloudinaryPublicId,
+
+        cloudinaryResourceType:
+          data.cloudinaryResourceType,
+
+        message: "",
+      });
 
       closeMediaPreview();
     } catch (error) {
@@ -1256,15 +1259,18 @@ console.log("FILE SIZE:", selectedMedia.size);
                     }
                   >
 
-                    <div className="avatar">
+                    <div
+                      className="avatar"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewingProfile(user);
+                      }}
+                      title="View profile"
+                    >
 
                       {user.profilePicture ? (
                         <img
-                          src={
-                            user.profilePicture?.startsWith("http")
-                              ? user.profilePicture
-                              : `https://talksy-skjz.onrender.com${user.profilePicture}`
-                          }
+                          src={user.profilePicture}
                           alt={user.username}
                           className="profile-picture"
                         />
@@ -1576,13 +1582,13 @@ console.log("FILE SIZE:", selectedMedia.size);
                       {msg.messageType ===
                         "image" && (
                         <img
-                          src={`https://talksy-skjz.onrender.com${msg.mediaUrl}`}
+                          src={msg.mediaUrl}
                           alt="Shared"
                           className="chat-image"
                           onClick={() =>
                             window.open(
-                              `https://talksy-skjz.onrender.com${msg.mediaUrl}`,
-"_blank"
+                              msg.mediaUrl,
+                              "_blank"
                             )
                           }
                         />
@@ -1593,7 +1599,7 @@ console.log("FILE SIZE:", selectedMedia.size);
                       {msg.messageType ===
                         "video" && (
                         <video
-                          src={`https://talksy-skjz.onrender.com${msg.mediaUrl}`}
+                          src={msg.mediaUrl}
                           controls
                           className="chat-video"
                         />
@@ -1796,52 +1802,105 @@ console.log("FILE SIZE:", selectedMedia.size);
 
       </main>
 
-      {/* CAMERA MODAL */}
+    {/* CAMERA MODAL */}
 
-      {cameraOpen && (
-        <div className="camera-modal">
+    {cameraOpen && (
+      <div className="camera-modal">
 
-          <div className="camera-box">
+        <div className="camera-box">
 
-            <button
-              className="camera-close"
-              onClick={closeCamera}
-            >
-              ✕
-            </button>
+          <button
+            className="camera-close"
+            onClick={closeCamera}
+          >
+            ✕
+          </button>
 
-            <h3>
-              Camera
-            </h3>
+          <h3>
+            Camera
+          </h3>
 
-            <video
-              ref={cameraVideoRef}
-              autoPlay
-              playsInline
-              className="camera-video"
-            />
+          <video
+            ref={cameraVideoRef}
+            autoPlay
+            playsInline
+            className="camera-video"
+          />
 
-            <canvas
-              ref={cameraCanvasRef}
-              style={{
-                display: "none",
-              }}
-            />
+          <canvas
+            ref={cameraCanvasRef}
+            style={{
+              display: "none",
+            }}
+          />
 
-            <button
-              className="capture-button"
-              onClick={capturePhoto}
-            >
-              📸 Capture Photo
-            </button>
-
-          </div>
+          <button
+            className="capture-button"
+            onClick={capturePhoto}
+          >
+            📸 Capture Photo
+          </button>
 
         </div>
-      )}
+
+      </div>
+    )}
+
+    {/* PROFILE VIEW MODAL */}
+
+    {viewingProfile && (
+      <div
+        className="profile-view-overlay"
+        onClick={() =>
+          setViewingProfile(null)
+        }
+      >
+
+        <div
+          className="profile-view"
+          onClick={(e) =>
+            e.stopPropagation()
+          }
+        >
+
+          <button
+            className="profile-view-close"
+            onClick={() =>
+              setViewingProfile(null)
+            }
+          >
+            ×
+          </button>
+
+          {viewingProfile.profilePicture ? (
+            <img
+              src={
+                viewingProfile.profilePicture
+              }
+              alt={
+                viewingProfile.username
+              }
+              className="profile-view-image"
+            />
+          ) : (
+            <div className="profile-view-letter">
+              {viewingProfile.username
+                .charAt(0)
+                .toUpperCase()}
+            </div>
+          )}
+
+          <h2>
+            {viewingProfile.username}
+          </h2>
+
+        </div>
+
+      </div>
+    )}
 
     </div>
-  );
-}
+    );
+    }
 
-export default App;
+    export default App;

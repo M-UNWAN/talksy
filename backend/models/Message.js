@@ -31,6 +31,16 @@ const messageSchema = new mongoose.Schema(
       default: "",
     },
 
+    cloudinaryPublicId: {
+      type: String,
+      default: "",
+    },
+
+    cloudinaryResourceType: {
+      type: String,
+      default: "",
+    },
+
     time: {
       type: String,
       required: true,
