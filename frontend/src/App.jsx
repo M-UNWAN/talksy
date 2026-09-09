@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import "./App.css";
 
-const socket = io("http://localhost:5000");
+const socket = io("https://talksy-skjz.onrender.com");
 
 function getChatKey(user1, user2) {
   return [user1, user2].sort().join("_");
@@ -593,7 +593,7 @@ function App() {
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           response = await fetch(
-            "http://localhost:5000/upload",
+            "https://talksy-skjz.onrender.com/upload",
             {
               method: "POST",
               body: formData,
@@ -717,7 +717,7 @@ console.log("FILE SIZE:", selectedMedia.size);
 
       const response =
         await fetch(
-          "http://localhost:5000/upload",
+          "https://talksy-skjz.onrender.com/upload",
           {
             method: "POST",
             body: formData,
